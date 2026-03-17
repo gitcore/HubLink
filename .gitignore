@@ -1,0 +1,53 @@
+# Build outputs
+**/bin/
+**/obj/
+**/out/
+**/publish/
+
+# Visual Studio
+**/.vs/
+**/*.user
+**/*.suo
+**/*.userosscache
+**/*.sln.docstates
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# SwiftUI project (exclude entire directory)
+HubLink.SwiftUI/
+
+# Test files and directories
+**/test_*.sh
+
+# Local deployment scripts (keep deploy-remote.sh in repo)
+deploy-remote-dev.sh
+
+# Debug directories
+**/DebugEncryption/
+**/DebugPacket/
+**/DirectBaiduTest/
+**/ServerBaiduTest/
+**/SimpleVpnTest/
+**/BaiduVpnTest/
+**/VpnTest/
+**/VpnClient/
+
+# Temporary files
+**/*.tmp
+**/*.log
+**/*.bak
+**/*.cache
+
+# IDE specific
+**/.vscode/
+**/.idea/
+
+# Environment files
+.env
+.env.local
+
+# Config files
+vpn-config.dev.json

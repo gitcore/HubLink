@@ -1,0 +1,15 @@
+{
+  "Servers": [
+    {
+      "Name": "Local Server",
+      "ServerUrl": "http://localhost:4080",
+      "LocalPort": 1080,
+      "EncryptionKey": "MySecretKey123",
+      "EnableEncryption": false,
+      "AutoReconnect": true,
+      "ReconnectInterval": 5000,
+      "AutoProxy": true
+    }
+  ],
+  "LastUsedServer": "Local Server"
+}

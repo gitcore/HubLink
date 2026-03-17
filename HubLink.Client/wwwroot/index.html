@@ -1,0 +1,1072 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VPN Client Manager</title>
+    <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'VT323', monospace;
+            background: #f5f5f5;
+            background-image: 
+                linear-gradient(45deg, #e0e0e0 25%, transparent 25%),
+                linear-gradient(-45deg, #e0e0e0 25%, transparent 25%),
+                linear-gradient(45deg, transparent 75%, #e0e0e0 75%),
+                linear-gradient(-45deg, transparent 75%, #e0e0e0 75%);
+            background-size: 16px 16px;
+            background-position: 0 0, 0 8px, 8px -8px, -8px 0px;
+            background-color: #e0e0e0;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            color: #212121;
+            image-rendering: pixelated;
+        }
+
+        .container {
+            background: #ffffff;
+            border: 4px solid #d32f2f;
+            box-shadow: 
+                8px 8px 0 rgba(211, 47, 47, 0.3),
+                inset -4px -4px 0 #f5f5f5,
+                inset 4px 4px 0 #ffffff;
+            max-width: 900px;
+            width: 100%;
+            padding: 20px;
+            position: relative;
+        }
+
+        .container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                repeating-linear-gradient(
+                    0deg,
+                    transparent,
+                    transparent 2px,
+                    rgba(0, 0, 0, 0.05) 2px,
+                    rgba(0, 0, 0, 0.05) 4px
+                );
+            pointer-events: none;
+        }
+
+        h1 {
+            text-align: center;
+            color: #ffffff;
+            margin-bottom: 30px;
+            font-size: 40px;
+            text-shadow: 
+                3px 3px 0 #000000,
+                -1px -1px 0 #000000,
+                1px -1px 0 #000000,
+                -1px 1px 0 #000000,
+                1px 1px 0 #000000;
+            letter-spacing: 2px;
+            line-height: 1.2;
+            position: relative;
+            z-index: 1;
+        }
+
+        .status-card {
+            background: #fafafa;
+            border: 3px solid #d32f2f;
+            padding: 20px;
+            margin-bottom: 20px;
+            position: relative;
+            box-shadow: 
+                inset -3px -3px 0 #f0f0f0,
+                inset 3px 3px 0 #ffffff;
+        }
+
+        .status-card::after {
+            content: 'STATUS';
+            position: absolute;
+            top: -10px;
+            left: 10px;
+            background: #d32f2f;
+            padding: 0 10px;
+            font-size: 18px;
+            color: #ffffff;
+            text-shadow: 2px 2px 0 #b71c1c;
+            border: 2px solid #b71c1c;
+        }
+
+        .status-row {
+            display: flex;
+            justify-content: space-between;
+            margin: 15px 0;
+            padding: 12px 0;
+            border-bottom: 2px solid #000000;
+            position: relative;
+            z-index: 1;
+        }
+
+        .status-row:last-child {
+            border-bottom: none;
+        }
+
+        .status-label {
+            color: #bdc3c7;
+            font-size: 22px;
+            font-weight: bold;
+            text-shadow: 1px 1px 0 #000000;
+        }
+
+        .status-value {
+            color: #ffffff;
+            font-size: 22px;
+            font-weight: bold;
+            text-shadow: 2px 2px 0 #000000;
+        }
+
+        .status-value.connected {
+            color: #7cb342;
+            text-shadow: 2px 2px 0 #000000;
+        }
+
+        .status-value.disconnected {
+            color: #e74c3c;
+            text-shadow: 2px 2px 0 #000000;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 15px;
+            margin-top: 25px;
+            position: relative;
+            z-index: 1;
+        }
+
+        button {
+            flex: 1;
+            padding: 15px 20px;
+            font-size: 22px;
+            border: 3px solid #d32f2f;
+            background: #fafafa;
+            color: #212121;
+            cursor: pointer;
+            transition: all 0.1s ease;
+            font-family: 'VT323', monospace;
+            text-transform: uppercase;
+            position: relative;
+            box-shadow: 
+                inset -3px -3px 0 #f0f0f0,
+                inset 3px 3px 0 #ffffff;
+            text-shadow: 2px 2px 0 #ffffff;
+        }
+
+        button:hover:not(:disabled) {
+            background: #ffffff;
+            transform: translateY(-2px);
+        }
+
+        button:active:not(:disabled) {
+            background: #f0f0f0;
+            transform: translateY(1px);
+            box-shadow: 
+                inset 3px 3px 0 #f0f0f0,
+                inset -3px -3px 0 #ffffff;
+        }
+
+        button:disabled {
+            background: #f0f0f0;
+            color: #bdbdbd;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+
+        button.connect {
+            background: #d32f2f;
+            color: #ffffff;
+            box-shadow: 
+                inset -3px -3px 0 #c62828,
+                inset 3px 3px 0 #ef5350;
+            text-shadow: 2px 2px 0 #b71c1c;
+        }
+
+        button.connect:hover:not(:disabled) {
+            background: #ef5350;
+        }
+
+        button.connect:active:not(:disabled) {
+            background: #c62828;
+            box-shadow: 
+                inset 3px 3px 0 #c62828,
+                inset -3px -3px 0 #ef5350;
+        }
+
+        button.disconnect {
+            background: #9e9e9e;
+            color: #ffffff;
+            box-shadow: 
+                inset -3px -3px 0 #757575,
+                inset 3px 3px 0 #bdbdbd;
+            text-shadow: 2px 2px 0 #616161;
+        }
+
+        button.disconnect:hover:not(:disabled) {
+            background: #bdbdbd;
+        }
+
+        button.disconnect:active:not(:disabled) {
+            background: #757575;
+            box-shadow: 
+                inset 3px 3px 0 #757575,
+                inset -3px -3px 0 #bdbdbd;
+        }
+
+        .section {
+            margin-top: 30px;
+        }
+
+        .section-title {
+            font-size: 30px;
+            color: #ffffff;
+            margin-bottom: 20px;
+            padding: 12px;
+            background: #d32f2f;
+            border: 3px solid #b71c1c;
+            text-align: center;
+            text-shadow: 2px 2px 0 #b71c1c;
+            box-shadow: 
+                inset -3px -3px 0 #c62828,
+                inset 3px 3px 0 #ef5350;
+            position: relative;
+            z-index: 1;
+        }
+
+        .server-list {
+            max-height: 350px;
+            overflow-y: auto;
+            background: #fafafa;
+            border: 3px solid #d32f2f;
+            padding: 10px;
+            box-shadow: 
+                inset -3px -3px 0 #f0f0f0,
+                inset 3px 3px 0 #ffffff;
+        }
+
+        .server-list::-webkit-scrollbar {
+            width: 16px;
+        }
+
+        .server-list::-webkit-scrollbar-track {
+            background: #f0f0f0;
+            border: 2px solid #d32f2f;
+        }
+
+        .server-list::-webkit-scrollbar-thumb {
+            background: #fafafa;
+            border: 2px solid #d32f2f;
+            box-shadow: 
+                inset -2px -2px 0 #f0f0f0,
+                inset 2px 2px 0 #ffffff;
+        }
+
+        .server-item {
+            background: #f0f0f0;
+            padding: 15px;
+            margin-bottom: 10px;
+            border: 3px solid #d32f2f;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.1s ease;
+            cursor: pointer;
+            box-shadow: 
+                inset -2px -2px 0 #e0e0e0,
+                inset 2px 2px 0 #ffffff;
+        }
+
+        .server-item:hover {
+            background: #fafafa;
+            transform: translateX(2px);
+        }
+
+        .server-item.active {
+            background: #d32f2f;
+            color: #ffffff;
+            box-shadow: 
+                inset -2px -2px 0 #c62828,
+                inset 2px 2px 0 #ef5350;
+        }
+
+        .server-info {
+            flex: 1;
+        }
+
+        .server-name {
+            font-size: 24px;
+            color: inherit;
+            margin-bottom: 8px;
+            line-height: 1.4;
+            text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.5);
+        }
+
+        .server-url {
+            color: inherit;
+            font-size: 18px;
+            opacity: 0.8;
+        }
+
+        .server-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .server-actions button {
+            padding: 10px 15px;
+            font-size: 16px;
+            flex: none;
+            width: auto;
+        }
+
+        .traffic-card {
+            background: #fafafa;
+            border: 3px solid #d32f2f;
+            padding: 20px;
+            margin-top: 20px;
+            position: relative;
+            box-shadow: 
+                inset -3px -3px 0 #f0f0f0,
+                inset 3px 3px 0 #ffffff;
+        }
+
+        .traffic-card::after {
+            content: 'TRAFFIC';
+            position: absolute;
+            top: -10px;
+            left: 10px;
+            background: #d32f2f;
+            padding: 0 10px;
+            font-size: 18px;
+            color: #ffffff;
+            text-shadow: 2px 2px 0 #b71c1c;
+            border: 2px solid #b71c1c;
+        }
+
+        .traffic-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 15px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .traffic-item {
+            text-align: center;
+            padding: 20px;
+            background: #fafafa;
+            border: 3px solid #d32f2f;
+            position: relative;
+            box-shadow: 
+                inset -2px -2px 0 #f0f0f0,
+                inset 2px 2px 0 #ffffff;
+        }
+
+        .traffic-label {
+            color: #212121;
+            font-size: 18px;
+            margin-bottom: 10px;
+            font-weight: bold;
+            text-shadow: 1px 1px 0 #ffffff;
+        }
+
+        .traffic-value {
+            font-size: 28px;
+            font-weight: bold;
+            color: #ffffff;
+            text-shadow: 2px 2px 0 #000000;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #ffffff;
+            font-size: 30px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .error {
+            background: #d9534f;
+            border: 3px solid #000000;
+            color: #ffffff;
+            padding: 20px;
+            margin: 10px 0;
+            text-align: center;
+            font-size: 22px;
+            box-shadow: 
+                inset -3px -3px 0 #c9302c,
+                inset 3px 3px 0 #f08080;
+            text-shadow: 2px 2px 0 #000000;
+            position: relative;
+            z-index: 1;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        @keyframes scanline {
+            0% {
+                transform: translateY(-100%);
+            }
+            100% {
+                transform: translateY(100vh);
+            }
+        }
+
+        .scanline {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.1);
+            animation: scanline 8s linear infinite;
+            pointer-events: none;
+            z-index: 1000;
+        }
+
+        .pulse {
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        .blink {
+            animation: blink 1s step-end infinite;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0; }
+        }
+
+        .radio-pixel {
+            appearance: none;
+            width: 24px;
+            height: 24px;
+            border: 3px solid #d32f2f;
+            background: #fafafa;
+            cursor: pointer;
+            margin-right: 15px;
+            position: relative;
+            box-shadow: 
+                inset -2px -2px 0 #f0f0f0,
+                inset 2px 2px 0 #ffffff;
+        }
+
+        .radio-pixel:checked {
+            background: #d32f2f;
+            box-shadow: 
+                inset -2px -2px 0 #c62828,
+                inset 2px 2px 0 #ef5350;
+        }
+
+        .radio-pixel:checked::after {
+            content: '✓';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 16px;
+            color: #ffffff;
+            text-shadow: 1px 1px 0 #b71c1c;
+        }
+
+        .pixel-icon {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            background: #d32f2f;
+            margin-right: 10px;
+            vertical-align: middle;
+            border: 2px solid #b71c1c;
+            box-shadow: 
+                inset -1px -1px 0 #c62828,
+                inset 1px 1px 0 #ef5350;
+        }
+
+        .pixel-icon.connected {
+            background: #d32f2f;
+        }
+
+        .pixel-icon.disconnected {
+            background: #9e9e9e;
+            box-shadow: 
+                inset -1px -1px 0 #757575,
+                inset 1px 1px 0 #bdbdbd;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            margin-right: 10px;
+            vertical-align: middle;
+            border: 2px solid #d32f2f;
+        }
+
+        .status-indicator.connected {
+            background: #d32f2f;
+            box-shadow: 
+                inset -1px -1px 0 #c62828,
+                inset 1px 1px 0 #ef5350;
+        }
+
+        .status-indicator.disconnected {
+            background: #9e9e9e;
+            box-shadow: 
+                inset -1px -1px 0 #757575,
+                inset 1px 1px 0 #bdbdbd;
+        }
+
+        .minecraft-btn {
+            position: relative;
+            background: #fafafa;
+            border: 3px solid #d32f2f;
+            box-shadow: 
+                inset -3px -3px 0 #f0f0f0,
+                inset 3px 3px 0 #ffffff;
+        }
+
+        .minecraft-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                repeating-linear-gradient(
+                    0deg,
+                    transparent,
+                    transparent 2px,
+                    rgba(0, 0, 0, 0.03) 2px,
+                    rgba(0, 0, 0, 0.03) 4px
+                );
+            pointer-events: none;
+        }
+
+        .grass-block {
+            display: inline-block;
+            width: 32px;
+            height: 32px;
+            background: 
+                linear-gradient(to bottom, 
+                    #5cb85c 0%, 
+                    #5cb85c 30%, 
+                    #8b5a2b 30%, 
+                    #8b5a2b 100%);
+            border: 2px solid #000000;
+            margin-right: 10px;
+            vertical-align: middle;
+            box-shadow: 
+                inset -2px -2px 0 #4a9c4a,
+                inset 2px 2px 0 #6fcf6f;
+        }
+
+        .stone-block {
+            display: inline-block;
+            width: 32px;
+            height: 32px;
+            background: #7f7f7f;
+            border: 2px solid #000000;
+            margin-right: 10px;
+            vertical-align: middle;
+            box-shadow: 
+                inset -2px -2px 0 #5f5f5f,
+                inset 2px 2px 0 #9f9f9f;
+        }
+
+        .dirt-block {
+            display: inline-block;
+            width: 32px;
+            height: 32px;
+            background: #8b5a2b;
+            border: 2px solid #000000;
+            margin-right: 10px;
+            vertical-align: middle;
+            box-shadow: 
+                inset -2px -2px 0 #6b4a1b,
+                inset 2px 2px 0 #ab7a3b;
+        }
+    </style>
+</head>
+<body>
+    <div class="scanline"></div>
+    <div class="container">
+        <h1>⛏️ VPN MANAGER ⛏️</h1>
+
+        <div id="loading" class="loading">
+            <p>LOADING...</p>
+            <p class="blink">[████████░░]</p>
+        </div>
+
+        <div id="error" class="error" style="display: none;"></div>
+
+        <div id="content" style="display: none;">
+            <div class="status-card">
+                <div class="status-row">
+                    <span class="status-label">STATUS:</span>
+                    <span class="status-value" id="status-state">--</span>
+                </div>
+                <div class="status-row">
+                    <span class="status-label">SERVER:</span>
+                    <span class="status-value" id="status-server">--</span>
+                </div>
+                <div class="status-row">
+                    <span class="status-label">PORT:</span>
+                    <span class="status-value" id="status-port">--</span>
+                </div>
+                <div class="status-row">
+                    <span class="status-label">UPTIME:</span>
+                    <span class="status-value" id="status-uptime">--</span>
+                </div>
+                <div class="status-row">
+                    <span class="status-label">RECONNECTS:</span>
+                    <span class="status-value" id="status-reconnects">--</span>
+                </div>
+                <div class="status-row">
+                    <span class="status-label">PROXY:</span>
+                    <span class="status-value" id="proxy-enabled">--</span>
+                </div>
+                <div class="button-group">
+                    <button class="connect" id="btn-connect" onclick="connect()">[ CONNECT ]</button>
+                    <button class="disconnect" id="btn-disconnect" onclick="disconnect()" disabled>[ DISCONNECT ]</button>
+                </div>
+            </div>
+
+            <div class="section">
+                <div class="section-title">📊 TRAFFIC STATS</div>
+                <div class="traffic-card">
+                    <div class="traffic-grid">
+                        <div class="traffic-item">
+                            <div class="traffic-label">UPLOAD</div>
+                            <div class="traffic-value" id="traffic-upload">0 KB</div>
+                        </div>
+                        <div class="traffic-item">
+                            <div class="traffic-label">DOWNLOAD</div>
+                            <div class="traffic-value" id="traffic-download">0 KB</div>
+                        </div>
+                        <div class="traffic-item">
+                            <div class="traffic-label">UP SPEED</div>
+                            <div class="traffic-value" id="traffic-upload-speed">0 KB/s</div>
+                        </div>
+                        <div class="traffic-item">
+                            <div class="traffic-label">DOWN SPEED</div>
+                            <div class="traffic-value" id="traffic-download-speed">0 KB/s</div>
+                        </div>
+                        <div class="traffic-item">
+                            <div class="traffic-label">CONNECTIONS</div>
+                            <div class="traffic-value" id="traffic-connections">0</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section">
+                <div class="section-title">🌐 SERVER LIST</div>
+                <div class="server-list" id="server-list">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:5080/api';
+        let eventSource = null;
+        let statusEventSource = null;
+        let proxyStatusInterval = null;
+
+        async function fetchStatus() {
+            try {
+                const response = await fetch(`${API_BASE}/status`);
+                const result = await response.json();
+                
+                if (result.success && result.data) {
+                    updateStatus(result.data);
+                }
+            } catch (error) {
+                console.error('获取状态失败:', error);
+                showError('获取状态失败: ' + error.message);
+            }
+        }
+
+        async function fetchProxyStatus() {
+            try {
+                const response = await fetch(`${API_BASE}/proxy/status`);
+                const result = await response.json();
+                
+                if (result.success && result.data) {
+                    updateProxyStatus(result.data);
+                }
+            } catch (error) {
+                console.error('获取代理状态失败:', error);
+            }
+        }
+
+        async function fetchServers() {
+            try {
+                const response = await fetch(`${API_BASE}/servers`);
+                const result = await response.json();
+                
+                if (result.success && result.data) {
+                    updateServerList(result.data.servers, result.data.lastUsedServer);
+                }
+            } catch (error) {
+                console.error('获取服务器列表失败:', error);
+                showError('获取服务器列表失败: ' + error.message);
+            }
+        }
+
+        async function connect() {
+            try {
+                const response = await fetch(`${API_BASE}/connect`, {
+                    method: 'POST'
+                });
+                const result = await response.json();
+                
+                if (result.success) {
+                    await fetchStatus();
+                    await fetchProxyStatus();
+                } else {
+                    showError(result.message || '连接失败');
+                }
+            } catch (error) {
+                console.error('连接失败:', error);
+                showError('连接失败: ' + error.message);
+            }
+        }
+
+        async function disconnect() {
+            try {
+                const response = await fetch(`${API_BASE}/disconnect`, {
+                    method: 'POST'
+                });
+                const result = await response.json();
+                
+                if (result.success) {
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                    await fetchStatus();
+                    await fetchProxyStatus();
+                } else {
+                    showError(result.message || '断开失败');
+                }
+            } catch (error) {
+                console.error('断开失败:', error);
+                showError('断开失败: ' + error.message);
+            }
+        }
+
+        async function connectToServer(name) {
+            try {
+                const response = await fetch(`${API_BASE}/servers/${encodeURIComponent(name)}/connect`, {
+                    method: 'POST'
+                });
+                const result = await response.json();
+                
+                if (result.success) {
+                    await fetchStatus();
+                    await fetchServers();
+                    await fetchProxyStatus();
+                } else {
+                    showError(result.message || '连接服务器失败');
+                }
+            } catch (error) {
+                console.error('连接服务器失败:', error);
+                showError('连接服务器失败: ' + error.message);
+            }
+        }
+
+        function updateStatus(data) {
+            const stateEl = document.getElementById('status-state');
+            const serverEl = document.getElementById('status-server');
+            const portEl = document.getElementById('status-port');
+            const uptimeEl = document.getElementById('status-uptime');
+            const reconnectsEl = document.getElementById('status-reconnects');
+            const btnConnect = document.getElementById('btn-connect');
+            const btnDisconnect = document.getElementById('btn-disconnect');
+
+            console.log('Updating status:', data);
+
+            const state = data.state || 'DISCONNECTED';
+            stateEl.textContent = state;
+            
+            if (data.isConnected) {
+                stateEl.className = 'status-value connected';
+                btnConnect.disabled = true;
+                btnDisconnect.disabled = false;
+                
+                if (data.connectionDuration !== undefined) {
+                    uptimeEl.textContent = formatDuration(data.connectionDuration);
+                } else {
+                    uptimeEl.textContent = '--';
+                }
+            } else if (state === 'DISCONNECTING') {
+                stateEl.className = 'status-value disconnected';
+                btnConnect.disabled = true;
+                btnDisconnect.disabled = true;
+                uptimeEl.textContent = '--';
+            } else if (state === 'CONNECTING' || state === 'RECONNECTING') {
+                stateEl.className = 'status-value disconnected';
+                btnConnect.disabled = true;
+                btnDisconnect.disabled = true;
+                uptimeEl.textContent = '--';
+            } else {
+                stateEl.className = 'status-value disconnected';
+                btnConnect.disabled = false;
+                btnDisconnect.disabled = true;
+                uptimeEl.textContent = '--';
+            }
+
+            if (data.server) {
+                serverEl.textContent = data.server.name;
+                portEl.textContent = data.server.localPort;
+            }
+
+            if (data.reconnectAttempts !== undefined) {
+                reconnectsEl.textContent = data.reconnectAttempts;
+            }
+
+            if (data.traffic) {
+                updateTraffic(data.traffic);
+            }
+        }
+
+        function updateProxyStatus(data) {
+            const proxyEnabledEl = document.getElementById('proxy-enabled');
+            
+            if (data.isEnabled) {
+                proxyEnabledEl.className = 'status-value connected';
+                proxyEnabledEl.textContent = 'ENABLED';
+            } else {
+                proxyEnabledEl.className = 'status-value disconnected';
+                proxyEnabledEl.textContent = 'DISABLED';
+            }
+        }
+
+        function updateServerList(servers, lastUsedServer) {
+            const listEl = document.getElementById('server-list');
+            listEl.innerHTML = '';
+
+            servers.forEach(server => {
+                const item = document.createElement('div');
+                item.className = 'server-item' + (server.name === lastUsedServer ? ' active' : '');
+                item.dataset.serverName = server.name;
+                
+                const radio = document.createElement('input');
+                radio.type = 'radio';
+                radio.name = 'server';
+                radio.className = 'radio-pixel';
+                radio.checked = server.name === lastUsedServer;
+                
+                const infoDiv = document.createElement('div');
+                infoDiv.className = 'server-info';
+                infoDiv.innerHTML = `
+                    <div class="server-name">${escapeHtml(server.name)}</div>
+                    <div class="server-url">${escapeHtml(server.serverUrl)}</div>
+                `;
+                
+                item.appendChild(radio);
+                item.appendChild(infoDiv);
+                
+                item.addEventListener('click', (e) => {
+                    if (e.target !== radio) {
+                        radio.checked = true;
+                        selectServer(server.name);
+                    }
+                });
+                
+                radio.addEventListener('change', () => {
+                    if (radio.checked) {
+                        selectServer(server.name);
+                    }
+                });
+                
+                listEl.appendChild(item);
+            });
+        }
+
+        function selectServer(name) {
+            const serverItems = document.querySelectorAll('.server-item');
+            serverItems.forEach(item => {
+                if (item.dataset.serverName === name) {
+                    item.classList.add('active');
+                } else {
+                    item.classList.remove('active');
+                }
+            });
+            
+            connectToServer(name);
+        }
+
+        function updateTraffic(traffic) {
+            document.getElementById('traffic-upload').textContent = formatBytes(traffic.bytesSent);
+            document.getElementById('traffic-download').textContent = formatBytes(traffic.bytesReceived);
+            document.getElementById('traffic-upload-speed').textContent = formatSpeed(traffic.uploadSpeed);
+            document.getElementById('traffic-download-speed').textContent = formatSpeed(traffic.downloadSpeed);
+            document.getElementById('traffic-connections').textContent = traffic.activeConnections;
+        }
+
+        function formatBytes(bytes) {
+            if (bytes === 0 || bytes === null || bytes === undefined) return '0 B';
+            if (bytes < 1024) return bytes.toFixed(2) + ' B';
+            if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(2) + ' KB';
+            if (bytes < 1024 * 1024 * 1024) return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
+            return (bytes / (1024 * 1024 * 1024)).toFixed(2) + ' GB';
+        }
+
+        function formatSpeed(bytesPerSecond) {
+            return formatBytes(bytesPerSecond) + '/s';
+        }
+
+        function formatDuration(duration) {
+            if (!duration) return '--';
+            
+            let totalSeconds = 0;
+            if (typeof duration === 'object' && duration.TotalSeconds !== undefined) {
+                totalSeconds = duration.TotalSeconds;
+            } else if (typeof duration === 'number') {
+                totalSeconds = duration;
+            } else {
+                return '--';
+            }
+            
+            const hours = Math.floor(totalSeconds / 3600);
+            const minutes = Math.floor((totalSeconds % 3600) / 60);
+            const seconds = Math.floor(totalSeconds % 60);
+            
+            if (hours > 0) {
+                return `${hours}H ${minutes}M ${seconds}S`;
+            } else if (minutes > 0) {
+                return `${minutes}M ${seconds}S`;
+            } else {
+                return `${seconds}S`;
+            }
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function showError(message) {
+            const errorEl = document.getElementById('error');
+            errorEl.textContent = message;
+            errorEl.style.display = 'block';
+            
+            setTimeout(() => {
+                errorEl.style.display = 'none';
+            }, 5000);
+        }
+
+        function showContent() {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('content').style.display = 'block';
+        }
+
+        function startTrafficStream() {
+            if (eventSource) {
+                eventSource.close();
+            }
+
+            eventSource = new EventSource(`${API_BASE}/traffic/stream`);
+            
+            eventSource.onmessage = (event) => {
+                try {
+                    const result = JSON.parse(event.data);
+                    if (result.success && result.data) {
+                        updateTraffic(result.data);
+                    }
+                } catch (error) {
+                    console.error('解析流量数据失败:', error);
+                }
+            };
+
+            eventSource.onerror = (error) => {
+                console.error('流量流错误:', error);
+                eventSource.close();
+                setTimeout(startTrafficStream, 5000);
+            };
+        }
+
+        function startStatusStream() {
+            if (statusEventSource) {
+                statusEventSource.close();
+            }
+
+            statusEventSource = new EventSource(`${API_BASE}/status/stream`);
+            
+            statusEventSource.onmessage = (event) => {
+                try {
+                    const result = JSON.parse(event.data);
+                    if (result.success && result.data) {
+                        updateStatus(result.data);
+                    }
+                } catch (error) {
+                    console.error('解析状态数据失败:', error);
+                }
+            };
+
+            statusEventSource.onerror = (error) => {
+                console.error('状态流错误:', error);
+                statusEventSource.close();
+                setTimeout(startStatusStream, 5000);
+            };
+        }
+
+        function stopStreams() {
+            if (eventSource) {
+                eventSource.close();
+                eventSource = null;
+            }
+            if (statusEventSource) {
+                statusEventSource.close();
+                statusEventSource = null;
+            }
+            if (proxyStatusInterval) {
+                clearInterval(proxyStatusInterval);
+                proxyStatusInterval = null;
+            }
+        }
+
+        function startProxyStatusUpdate() {
+            if (proxyStatusInterval) {
+                clearInterval(proxyStatusInterval);
+            }
+            
+            proxyStatusInterval = setInterval(() => {
+                fetchProxyStatus();
+            }, 3000);
+        }
+
+        async function init() {
+            await Promise.all([fetchStatus(), fetchServers(), fetchProxyStatus()]);
+            showContent();
+            startTrafficStream();
+            startStatusStream();
+            startProxyStatusUpdate();
+        }
+
+        window.addEventListener('beforeunload', stopStreams);
+
+        init();
+    </script>
+</body>
+</html>
